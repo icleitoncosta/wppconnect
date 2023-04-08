@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { Logger } from 'winston';
 import { CreateConfig, defaultOptions } from '../../config/create-config';
 import {

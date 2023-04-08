@@ -24,7 +24,7 @@ import type {
   PoolMessageOptions,
 } from '@wppconnect/wa-js/dist/chat';
 import * as path from 'path';
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { CreateConfig } from '../../config/create-config';
 import { convertToMP4GIF } from '../../utils/ffmpeg';
 import { sleep } from '../../utils/sleep';

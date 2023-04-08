@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { ScrapQrcode } from '../model/qrcode';
 
 export async function scrapeImg(page: Page): Promise<ScrapQrcode | undefined> {

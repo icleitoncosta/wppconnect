@@ -14,10 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
-import { ConnectionTransport } from 'puppeteer';
 import WebSocket from 'ws';
 
-export class WebSocketTransport implements ConnectionTransport {
+export class WebSocketTransport {
   static create(url: string, timeout?: number): Promise<WebSocketTransport> {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(url, [], {

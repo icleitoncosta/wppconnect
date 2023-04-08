@@ -21,11 +21,14 @@ import * as path from 'path';
 import * as rimraf from 'rimraf';
 import * as waVersion from '@wppconnect/wa-version';
 import axios from 'axios';
-import { Browser, BrowserContext, Page } from 'puppeteer';
-import puppeteer from 'puppeteer-extra';
+import playwright, {
+  ChromiumBrowserContext,
+  Page,
+  Browser,
+  BrowserContext,
+} from 'playwright';
 import { CreateConfig } from '../config/create-config';
 import { puppeteerConfig } from '../config/puppeteer.config';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { useragentOverride } from '../config/WAuserAgente';
 import { WebSocketTransport } from './websocket';
 import { Logger } from 'winston';
@@ -35,7 +38,7 @@ import { LogLevel } from '../utils/logger';
 import { sleep } from '../utils/sleep';
 
 export async function unregisterServiceWorker(page: Page) {
-  await page.evaluateOnNewDocument(() => {
+  await page.evaluate(() => {
     // Remove existent service worker
     navigator.serviceWorker
       .getRegistrations()
@@ -53,7 +56,7 @@ export async function unregisterServiceWorker(page: Page) {
     setInterval(() => {
       window.onerror = console.error;
       window.onunhandledrejection = console.error;
-    }, 500);
+    }, 700);
   });
 }
 
@@ -80,23 +83,18 @@ export async function setWhatsappVersion(
     return;
   }
 
-  await page.setRequestInterception(true);
-
-  page.on('request', (req) => {
-    if (req.url().startsWith('https://web.whatsapp.com/check-update')) {
-      req.abort();
-      return;
+  await page.route('**/*', (route, request) => {
+    if (request.url().startsWith('https://web.whatsapp.com/check-update')) {
+      route.abort();
+    } else if (request.url() === 'https://web.whatsapp.com/') {
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: body,
+      });
+    } else {
+      route.continue();
     }
-    if (req.url() !== 'https://web.whatsapp.com/') {
-      req.continue();
-      return;
-    }
-
-    req.respond({
-      status: 200,
-      contentType: 'text/html',
-      body: body,
-    });
   });
 }
 
@@ -107,8 +105,6 @@ export async function initWhatsapp(
   version?: string,
   log?: (level: LogLevel, message: string, meta?: object) => any
 ) {
-  await page.setUserAgent(useragentOverride);
-
   await unregisterServiceWorker(page);
 
   if (version) {
@@ -257,14 +253,14 @@ export async function initBrowser(
   session: string,
   options: CreateConfig,
   logger: Logger
-): Promise<Browser> {
+): Promise<BrowserContext> {
   if (options.useChrome) {
     const chromePath = getChrome();
     if (chromePath) {
       if (!options.puppeteerOptions) {
         options.puppeteerOptions = {};
       }
-      options.puppeteerOptions.executablePath = chromePath;
+      //options.puppeteerOptions.executablePath = chromePath;
     } else {
       logger.warn('Chrome not found, using chromium', {
         session,
@@ -273,25 +269,25 @@ export async function initBrowser(
     }
   }
 
-  // Use stealth plugin to avoid being detected as a bot
-  puppeteer.use(StealthPlugin());
-
-  let browser = null;
+  let browser: Browser = null;
+  let context: BrowserContext = null;
   if (options.browserWS && options.browserWS != '') {
     const transport = await getTransport(options.browserWS);
-    browser = await puppeteer.connect({ transport });
+    browser = await playwright.chromium.connect(options.browserWS);
   } else {
-    browser = await puppeteer.launch({
-      headless: options.headless,
-      devtools: options.devtools,
+    browser = await playwright.chromium.launch({
+      headless: false,
+      devtools: true,
       args: options.browserArgs
         ? options.browserArgs
         : [...puppeteerConfig.chromiumArgs],
-      ...options.puppeteerOptions,
+    });
+    context = await browser.newContext({
+      userAgent: useragentOverride,
     });
 
     // Register an exit callback to remove user-data-dir
-    try {
+    /*try {
       const arg = browser
         .process()
         .spawnargs.find((s: string) => s.startsWith('--user-data-dir='));
@@ -311,16 +307,14 @@ export async function initBrowser(
           });
         }
       }
-    } catch (error) {}
+    } catch (error) {}*/
   }
 
-  return browser;
+  return context;
 }
 
-export async function getOrCreatePage(
-  browser: Browser | BrowserContext
-): Promise<Page> {
-  const pages = await browser.pages();
+export async function getOrCreatePage(browser: BrowserContext): Promise<Page> {
+  const pages = browser.pages();
 
   if (pages.length) {
     return pages[0];

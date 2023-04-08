@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { HostLayer } from './host.layer';
 import {
   base64MimeType,

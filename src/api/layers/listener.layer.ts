@@ -16,7 +16,7 @@
  */
 
 import { EventEmitter, captureRejectionSymbol } from 'events';
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { CreateConfig } from '../../config/create-config';
 import { evaluateAndReturn } from '../helpers';
 import { ExposedFn } from '../helpers/exposed.enum';

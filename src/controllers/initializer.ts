@@ -19,8 +19,7 @@ import { Whatsapp } from '../api/whatsapp';
 import { CreateConfig, defaultOptions } from '../config/create-config';
 import { initBrowser, getOrCreatePage } from './browser';
 import { checkUpdates, welcomeScreen } from './welcome';
-import { SocketState, StatusFind } from '../api/model/enum';
-import { Browser } from 'puppeteer';
+import { Browser, BrowserContext, Page } from 'playwright';
 import {
   CatchQRCallback,
   CreateOptions,
@@ -126,24 +125,24 @@ export async function create(
     await checkUpdates();
   }
 
-  let browser = mergedOptions.browser;
+  let browser: any = mergedOptions.browser;
   let page = mergedOptions.page;
 
   if (!browser && page) {
     // Get browser from page
-    browser = page.browser();
+    browser = browser.browser();
   } else if (!browser && !page) {
     if (
       !mergedOptions.browserWS &&
-      !mergedOptions.puppeteerOptions?.userDataDir
+      !(mergedOptions.puppeteerOptions as any).userDataDir
     ) {
-      mergedOptions.puppeteerOptions.userDataDir = path.resolve(
+      (mergedOptions.puppeteerOptions as any).userDataDir = path.resolve(
         process.cwd(),
         path.join(mergedOptions.folderNameToken, sanitize(session))
       );
 
-      if (!fs.existsSync(mergedOptions.puppeteerOptions.userDataDir)) {
-        fs.mkdirSync(mergedOptions.puppeteerOptions.userDataDir, {
+      if (!fs.existsSync((mergedOptions.puppeteerOptions as any).userDataDir)) {
+        fs.mkdirSync((mergedOptions.puppeteerOptions as any).userDataDir, {
           recursive: true,
         });
       }
@@ -151,7 +150,9 @@ export async function create(
 
     if (!mergedOptions.browserWS) {
       logger.info(
-        `Using browser folder '${mergedOptions.puppeteerOptions.userDataDir}'`,
+        `Using browser folder '${
+          (mergedOptions.puppeteerOptions as any).userDataDir
+        }'`,
         {
           session,
           type: 'browser',
@@ -204,7 +205,7 @@ export async function create(
     });
   }
 
-  (browser as Browser).on('targetdestroyed', async (target: any) => {
+  browser.on('targetdestroyed', async (target: any) => {
     if (
       typeof (browser as Browser).isConnected === 'function' &&
       !(browser as Browser).isConnected()
@@ -217,7 +218,7 @@ export async function create(
     }
   });
 
-  (browser as Browser).on('disconnected', () => {
+  browser.on('disconnected', () => {
     if (mergedOptions.browserWS) {
       statusFind && statusFind('serverClose', session);
     } else {
@@ -246,7 +247,9 @@ export async function create(
 
       let waitLoginPromise = null;
       client.onStateChange(async (state) => {
-        const connected = await page.evaluate(() => WPP.conn.isRegistered());
+        const connected = await (page as Page).evaluate(() =>
+          WPP.conn.isRegistered()
+        );
         if (!connected) {
           await sleep(2000);
 

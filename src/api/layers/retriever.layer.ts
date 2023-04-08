@@ -15,7 +15,7 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { CreateConfig } from '../../config/create-config';
 import { SessionToken } from '../../token-store';
 import { evaluateAndReturn } from '../helpers';

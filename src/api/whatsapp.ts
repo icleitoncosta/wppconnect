@@ -16,7 +16,7 @@
  */
 
 import axios from 'axios';
-import { Page } from 'puppeteer';
+import { Page } from 'playwright';
 import { CreateConfig } from '../config/create-config';
 import { useragentOverride } from '../config/WAuserAgente';
 import { evaluateAndReturn } from './helpers';
@@ -133,7 +133,7 @@ export class Whatsapp extends BusinessLayer {
    * @internal
    */
   public async close() {
-    const browser = this.page.browser();
+    const browser = this.page.context().browser();
 
     if (!this.page.isClosed()) {
       await this.page.close().catch(() => null);
@@ -141,13 +141,15 @@ export class Whatsapp extends BusinessLayer {
 
     await browser.close().catch(() => null);
 
+    //todo - kill fix
+    /*
     try {
       const process = browser.process();
       if (process) {
         treekill(process.pid, 'SIGKILL');
       }
     } catch (error) {}
-
+    */
     return true;
   }
 

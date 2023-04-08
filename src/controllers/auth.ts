@@ -15,12 +15,12 @@
  * along with WPPConnect.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import * as puppeteer from 'puppeteer';
+import * as playwright from 'playwright';
 import * as qrcode from 'qrcode-terminal';
 
 export const getInterfaceStatus = async (
-  waPage: puppeteer.Page
-): Promise<puppeteer.HandleFor<Awaited<ReturnType<any>>>> => {
+  waPage: playwright.Page
+): Promise<any> => {
   return await waPage
     .waitForFunction(
       () => {
@@ -32,7 +32,7 @@ export const getInterfaceStatus = async (
           return 'UNPAIRED';
         }
 
-        const streamStatus = WPP?.whatsapp?.Stream?.displayInfo;
+        const streamStatus = window.WPP?.whatsapp?.Stream?.displayInfo;
         if (['PAIRING', 'RESUMING', 'SYNCING'].includes(streamStatus)) {
           return 'PAIRING';
         }
@@ -42,15 +42,10 @@ export const getInterfaceStatus = async (
         }
         return false;
       },
-      {
-        timeout: 0,
-        polling: 100,
-      }
+      { timeout: 0, polling: 100 }
     )
-    .then(async (element: puppeteer.HandleFor<Awaited<ReturnType<any>>>) => {
-      return (await element.evaluate((a: any) => a)) as puppeteer.HandleFor<
-        ReturnType<any>
-      >;
+    .then(async (element: any) => {
+      return await element.evaluate((a: any) => a);
     })
     .catch(() => null);
 };
@@ -60,21 +55,21 @@ export const getInterfaceStatus = async (
  * @returns true if is authenticated, false otherwise
  * @param waPage
  */
-export const isAuthenticated = (waPage: puppeteer.Page) => {
+export const isAuthenticated = (waPage: playwright.Page) => {
   return waPage.evaluate(() => WPP.conn.isRegistered());
 };
 
-export const needsToScan = async (waPage: puppeteer.Page) => {
+export const needsToScan = async (waPage: playwright.Page) => {
   const connected = await isAuthenticated(waPage);
 
   return !connected;
 };
 
-export const isInsideChat = async (waPage: puppeteer.Page) => {
+export const isInsideChat = async (waPage: playwright.Page) => {
   return await waPage.evaluate(() => WPP.conn.isMainReady());
 };
 
-export const isConnectingToPhone = async (waPage: puppeteer.Page) => {
+export const isConnectingToPhone = async (waPage: playwright.Page) => {
   return await waPage.evaluate(
     () => WPP.conn.isMainLoaded() && !WPP.conn.isMainReady()
   );
